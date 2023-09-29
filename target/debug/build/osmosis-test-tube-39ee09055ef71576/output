@@ -1,0 +1,5 @@
+cargo:rerun-if-changed=./libosmosistesttube
+cargo:rustc-link-search=native=/Users/brimigs/atomic-swaps/target/debug/build/osmosis-test-tube-39ee09055ef71576/out
+cargo:rustc-link-lib=dylib=osmosistesttube
+cargo:rerun-if-changed=/Library/Developer/CommandLineTools/usr/lib/clang/14.0.3/include/stddef.h
+cargo:rerun-if-changed=/Library/Developer/CommandLineTools/usr/lib/clang/14.0.3/include/__stddef_max_align_t.h

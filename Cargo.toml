@@ -1,0 +1,16 @@
+[package]
+name = "atomic-swaps-contract"
+version = "0.1.0"
+authors = ["Brianna Migliaccio <migliacciobri@gmail.com>"]
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+cosmwasm-std       = "1.4.0"
+cosmwasm-schema    = "1.4.0"
+cw-storage-plus    = "1.1.0"
+osmosis-std        = "0.19.2"
+osmosis-test-tube  = "19.2.0"
+cosmwasm-storage   = "1.4.0"

@@ -1,0 +1,12 @@
+/Users/brimigs/atomic-swaps/target/debug/deps/prost-a7e71ccfd2142a1f.rmeta: /Users/brimigs/.cargo/registry/src/index.crates.io-6f17d22bba15001f/prost-0.11.9/src/lib.rs /Users/brimigs/.cargo/registry/src/index.crates.io-6f17d22bba15001f/prost-0.11.9/src/error.rs /Users/brimigs/.cargo/registry/src/index.crates.io-6f17d22bba15001f/prost-0.11.9/src/message.rs /Users/brimigs/.cargo/registry/src/index.crates.io-6f17d22bba15001f/prost-0.11.9/src/types.rs /Users/brimigs/.cargo/registry/src/index.crates.io-6f17d22bba15001f/prost-0.11.9/src/encoding.rs /Users/brimigs/.cargo/registry/src/index.crates.io-6f17d22bba15001f/prost-0.11.9/src/../README.md
+
+/Users/brimigs/atomic-swaps/target/debug/deps/libprost-a7e71ccfd2142a1f.rlib: /Users/brimigs/.cargo/registry/src/index.crates.io-6f17d22bba15001f/prost-0.11.9/src/lib.rs /Users/brimigs/.cargo/registry/src/index.crates.io-6f17d22bba15001f/prost-0.11.9/src/error.rs /Users/brimigs/.cargo/registry/src/index.crates.io-6f17d22bba15001f/prost-0.11.9/src/message.rs /Users/brimigs/.cargo/registry/src/index.crates.io-6f17d22bba15001f/prost-0.11.9/src/types.rs /Users/brimigs/.cargo/registry/src/index.crates.io-6f17d22bba15001f/prost-0.11.9/src/encoding.rs /Users/brimigs/.cargo/registry/src/index.crates.io-6f17d22bba15001f/prost-0.11.9/src/../README.md
+
+/Users/brimigs/atomic-swaps/target/debug/deps/prost-a7e71ccfd2142a1f.d: /Users/brimigs/.cargo/registry/src/index.crates.io-6f17d22bba15001f/prost-0.11.9/src/lib.rs /Users/brimigs/.cargo/registry/src/index.crates.io-6f17d22bba15001f/prost-0.11.9/src/error.rs /Users/brimigs/.cargo/registry/src/index.crates.io-6f17d22bba15001f/prost-0.11.9/src/message.rs /Users/brimigs/.cargo/registry/src/index.crates.io-6f17d22bba15001f/prost-0.11.9/src/types.rs /Users/brimigs/.cargo/registry/src/index.crates.io-6f17d22bba15001f/prost-0.11.9/src/encoding.rs /Users/brimigs/.cargo/registry/src/index.crates.io-6f17d22bba15001f/prost-0.11.9/src/../README.md
+
+/Users/brimigs/.cargo/registry/src/index.crates.io-6f17d22bba15001f/prost-0.11.9/src/lib.rs:
+/Users/brimigs/.cargo/registry/src/index.crates.io-6f17d22bba15001f/prost-0.11.9/src/error.rs:
+/Users/brimigs/.cargo/registry/src/index.crates.io-6f17d22bba15001f/prost-0.11.9/src/message.rs:
+/Users/brimigs/.cargo/registry/src/index.crates.io-6f17d22bba15001f/prost-0.11.9/src/types.rs:
+/Users/brimigs/.cargo/registry/src/index.crates.io-6f17d22bba15001f/prost-0.11.9/src/encoding.rs:
+/Users/brimigs/.cargo/registry/src/index.crates.io-6f17d22bba15001f/prost-0.11.9/src/../README.md:
