@@ -4,7 +4,8 @@ use cosmwasm_std::{
     to_binary, BankMsg, Coin, CosmosMsg, DepsMut, Env, MessageInfo, Response, StdError, StdResult,
 };
 use osmosis_std::shim::{Any, Timestamp};
-use osmosis_std::types::cosmos::authz::v1beta1::{GenericAuthorization, GrantAuthorization};
+use osmosis_std::types::cosmos::authz::v1beta1::GrantAuthorization;
+use osmosis_std::types::cosmwasm::wasm::v1::{ContractExecutionAuthorization, ContractGrant};
 use crate::error::ContractError;
 use crate::error::ContractError::{AlreadyFulfilled, InaccurateFunds, Unauthorized};
 
@@ -16,12 +17,22 @@ fn grant_authorization(
 ) -> StdResult<()> {
     let contract_addr = env.contract.address.to_string();
 
-    let authorization = GenericAuthorization {
-        msg: format!("cosmos.bank.v1beta1.MsgSend({})", coin.denom),
+    // Populate limit and filter as needed in your use case.
+    let limit = None;
+    let filter = None;
+
+    let grant = ContractGrant {
+        contract: format!("cosmos.bank.v1beta1.MsgSend({})", coin.denom),
+        limit,
+        filter,
+    };
+
+    let authorization = ContractExecutionAuthorization {
+        grants: vec![grant],
     };
 
     let authorization_any: Option<Any> = Some(Any {
-        type_url: "/cosmos.authz.v1beta1.GenericAuthorization".to_string(),
+        type_url: "/osmosis.authz.v1.ContractExecutionAuthorization".to_string(),
         value: Vec::from(to_binary(&authorization)?),
     });
 
