@@ -3,7 +3,7 @@ use cosmwasm_std::Coin;
 use osmosis_std::shim::Timestamp;
 
 #[cw_serde]
-pub struct InstantiateMsg {}
+pub struct InstantiateMsg{}
 
 #[cw_serde]
 pub enum ExecuteMsg {

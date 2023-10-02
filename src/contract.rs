@@ -1,7 +1,9 @@
-use cosmwasm_std::{Binary, Deps, DepsMut, entry_point, Env, MessageInfo, Response, StdError, StdResult, to_binary};
-use crate::execute::{fulfill_offer, make_offer, match_offer};
+use crate::execute::{fulfill_offer, make_offer};
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::query::query_all_offers;
+use cosmwasm_std::{
+    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult,
+};
 
 #[entry_point]
 pub fn instantiate(
@@ -19,7 +21,6 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
         ExecuteMsg::MakeOffer(maker_coin, taker_coin, future_time) => {
             make_offer(deps, env, info, maker_coin, taker_coin, future_time)
         }
-        ExecuteMsg::MatchOffer(offer_id) => match_offer(deps, env, info, offer_id),
         ExecuteMsg::FulfillOffer { offer_id, taker } => {
             fulfill_offer(deps, env, info, offer_id, taker)
         }

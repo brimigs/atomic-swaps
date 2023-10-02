@@ -1,0 +1,11 @@
+# cargo files
+target
+
+# macOS system files
+.DS_Store
+
+# intellij local files
+.idea
+
+# artifacts
+artifacts
