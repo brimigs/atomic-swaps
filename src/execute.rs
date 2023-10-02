@@ -2,10 +2,11 @@ use crate::msg::Offer;
 use crate::state::{OFFERS, OFFER_ID_COUNTER};
 use cosmwasm_std::{
     to_binary, BankMsg, Coin, CosmosMsg, DepsMut, Env, MessageInfo, Response, StdError, StdResult,
-    WasmMsg,
 };
 use osmosis_std::shim::{Any, Timestamp};
 use osmosis_std::types::cosmos::authz::v1beta1::{GenericAuthorization, GrantAuthorization};
+use crate::error::ContractError;
+use crate::error::ContractError::{AlreadyFulfilled, InaccurateFunds, Unauthorized};
 
 fn grant_authorization(
     env: Env,
@@ -41,11 +42,13 @@ pub fn make_offer(
     maker_coin: Coin,
     taker_coin: Coin,
     future_time: Option<Timestamp>,
-) -> StdResult<Response> {
+) ->  Result<Response, ContractError> {
     grant_authorization(env, info.clone(), &maker_coin, future_time)?;
 
     if !info.funds.iter().any(|coin| *coin == maker_coin) {
-        return Err(StdError::generic_err("Accurate funds not sent"));
+        return Err(InaccurateFunds {
+            reason:  format!("Maker did not send accurate funds for maker coin, funds needed: {}.", maker_coin),
+        });
     }
 
     // Increment the offer_id counter and use its value as the new offer_id
@@ -74,24 +77,24 @@ pub fn fulfill_offer(
     info: MessageInfo,
     offer_id: String,
     taker: String,
-) -> StdResult<Response> {
+) -> Result<Response, ContractError>{
     // Load offer
     let offer = OFFERS.load(deps.storage, &offer_id)?;
 
     // Validate taker
     if offer.taker.is_some() {
-        return Err(StdError::generic_err("Offer already fulfilled"));
+        return Err(AlreadyFulfilled {});
     }
     if taker != info.sender {
-        return Err(StdError::generic_err("Invalid taker"));
+        return Err(Unauthorized {});
     }
 
     // Validate takers funds
     if !info.funds.iter().any(|coin| *coin == offer.taker_coin) {
-        return Err(StdError::generic_err("Accurate funds not sent"));
+        return Err(InaccurateFunds {
+            reason:  format!("Taker did not send accurate funds for maker coin, funds needed: {}.", offer.taker_coin),
+        });
     }
-
-    // Note: "thiserror" could be used for better error handling here
 
     // Transfer coins
     let messages: Vec<CosmosMsg> = vec![

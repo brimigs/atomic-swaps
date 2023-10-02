@@ -6,7 +6,7 @@ use osmosis_test_tube::{Account, Module, OsmosisTestApp, Wasm};
 pub mod helpers;
 
 #[test]
-fn no_funds_in_maker_acccount() {
+fn no_funds_in_maker_account() {
     let app = OsmosisTestApp::new();
     let wasm = Wasm::new(&app);
 

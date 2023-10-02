@@ -64,6 +64,7 @@ dependencies = [
  "cw-storage-plus",
  "osmosis-std",
  "osmosis-test-tube",
+ "thiserror",
 ]
 
 [[package]]
