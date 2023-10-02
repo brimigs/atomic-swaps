@@ -11,7 +11,7 @@ pub enum ContractError {
         reason: String,
     },
 
-    #[error("{}")]
+    #[error("AlreadyFulfilled")]
     AlreadyFulfilled {},
 
     #[error("Unauthorized")]

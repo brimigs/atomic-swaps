@@ -4,6 +4,7 @@ use crate::query::query_all_offers;
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult,
 };
+use crate::error::ContractError;
 
 #[entry_point]
 pub fn instantiate(
@@ -16,7 +17,7 @@ pub fn instantiate(
 }
 
 #[entry_point]
-pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> StdResult<Response> {
+pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::MakeOffer(maker_coin, taker_coin, future_time) => {
             make_offer(deps, env, info, maker_coin, taker_coin, future_time)
