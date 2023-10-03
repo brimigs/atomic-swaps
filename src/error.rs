@@ -6,10 +6,8 @@ pub enum ContractError {
     #[error("{0}")]
     Std(#[from] StdError),
 
-    #[error("{reason:?}")]
-    InaccurateFunds {
-        reason: String,
-    },
+    #[error("Incorrect funds sent")]
+    InaccurateFunds {},
 
     #[error("AlreadyFulfilled")]
     AlreadyFulfilled {},

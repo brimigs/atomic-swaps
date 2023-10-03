@@ -5,7 +5,7 @@ authors = ["Brianna Migliaccio <migliacciobri@gmail.com>"]
 edition = "2021"
 
 [lib]
-crate-type = ["cdylib"]
+crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 cosmwasm-std       = "1.4.0"

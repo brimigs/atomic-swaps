@@ -1,6 +1,7 @@
-use crate::helpers::{assert_err, instantiate_contract};
-use atomic_swaps_contract::msg::ExecuteMsg;
-use cosmwasm_std::{coin, StdError};
+use crate::helpers::assert_err;
+use atomic_swaps_contract::error::ContractError::InaccurateFunds;
+use atomic_swaps_contract::msg::{ExecuteMsg, InstantiateMsg};
+use cosmwasm_std::coin;
 use osmosis_test_tube::{Account, Module, OsmosisTestApp, Wasm};
 
 pub mod helpers;
@@ -11,21 +12,47 @@ fn no_funds_in_maker_account() {
     let wasm = Wasm::new(&app);
 
     let accs = app
-        .init_accounts(&[coin(0, "uatom"), coin(1_000_000_000_000, "uosmo")], 1)
+        .init_accounts(
+            &[
+                coin(1_000_000_000_000, "uatom"),
+                coin(1_000_000_000_000, "uosmo"),
+            ],
+            2,
+        )
         .unwrap();
     let maker = &accs[0];
+    let admin = &accs[1];
 
-    let contract_addr = instantiate_contract(&wasm, maker);
+    let wasm_byte_code = std::fs::read("./artifacts/atomic_swaps_contract-aarch64.wasm").unwrap();
+    let code_id = wasm
+        .store_code(&wasm_byte_code, None, admin)
+        .unwrap()
+        .data
+        .code_id;
+
+    let contract_addr = wasm
+        .instantiate(
+            code_id,
+            &InstantiateMsg {},
+            None,
+            Some("atomic-swaps-contract"),
+            &[],
+            admin,
+        )
+        .unwrap()
+        .data
+        .address;
 
     let res_err = wasm
         .execute(
             &contract_addr,
-            &ExecuteMsg::MakeOffer(coin(1000000, "uatom"), coin(1000000, "uosmo"), None),
+            &ExecuteMsg::MakeOffer(coin(1000000, "umars"), coin(1000000, "uosmo"), None),
             &[],
             &maker,
         )
         .unwrap_err();
-    assert_err(res_err, StdError::generic_err("Incorrect funds provided"));
+
+    assert_err(res_err, InaccurateFunds {})
 }
 
 #[test]
@@ -39,30 +66,49 @@ fn not_enough_funds_by_taker() {
                 coin(1_000_000_000_000, "uatom"),
                 coin(1_000_000_000_000, "uosmo"),
             ],
-            2,
+            3,
         )
         .unwrap();
     let maker = &accs[0];
     let taker = &accs[1];
+    let admin = &accs[2];
 
     let taker_addr = taker.address();
 
-    let contract_addr = instantiate_contract(&wasm, maker);
+    let wasm_byte_code = std::fs::read("./artifacts/atomic_swaps_contract-aarch64.wasm").unwrap();
+    let code_id = wasm
+        .store_code(&wasm_byte_code, None, admin)
+        .unwrap()
+        .data
+        .code_id;
+
+    let contract_addr = wasm
+        .instantiate(
+            code_id,
+            &InstantiateMsg {},
+            None,
+            Some("atomic-swaps-contract"),
+            &[],
+            admin,
+        )
+        .unwrap()
+        .data
+        .address;
 
     wasm.execute(
         &contract_addr,
         &ExecuteMsg::MakeOffer(
-            coin(1_000_000_000_000, "uatom"),
-            coin(1_000_000_000_000, "uosmo"),
+            coin(1_000_000_000, "uatom"),
+            coin(1_000_000_000, "uosmo"),
             None,
         ),
-        &[],
+        &[coin(1_000_000_000, "uatom"), coin(1_000_000_000, "uosmo")],
         &maker,
     )
     .unwrap();
 
-    // Since this is the only offer in storage, the offer ID will be one. To optimize this in the future, add in additional queries to check for specific maker offers.
-    let number: i32 = 1;
+    // Since this is the only offer in storage, the offer ID will be 1. To optimize this in the future, add in additional queries to check for a specific maker offers.
+    let number: u64 = 1;
     let offer_id: String = number.to_string();
 
     let res_err = wasm
@@ -73,11 +119,11 @@ fn not_enough_funds_by_taker() {
                 taker: taker_addr,
             },
             &[coin(1_000, "uosmo")],
-            &(taker),
+            &taker,
         )
         .unwrap_err();
 
-    assert_err(res_err, StdError::generic_err("Accurate funds not sent"))
+    assert_err(res_err, InaccurateFunds {})
 }
 
 #[test]
@@ -91,24 +137,43 @@ fn invalid_offer_id() {
                 coin(1_000_000_000_000, "uatom"),
                 coin(1_000_000_000_000, "uosmo"),
             ],
-            2,
+            3,
         )
         .unwrap();
     let maker = &accs[0];
     let taker = &accs[1];
+    let admin = &accs[2];
 
     let taker_addr = taker.address();
 
-    let contract_addr = instantiate_contract(&wasm, maker);
+    let wasm_byte_code = std::fs::read("./artifacts/atomic_swaps_contract-aarch64.wasm").unwrap();
+    let code_id = wasm
+        .store_code(&wasm_byte_code, None, admin)
+        .unwrap()
+        .data
+        .code_id;
+
+    let contract_addr = wasm
+        .instantiate(
+            code_id,
+            &InstantiateMsg {},
+            None,
+            Some("atomic-swaps-contract"),
+            &[],
+            admin,
+        )
+        .unwrap()
+        .data
+        .address;
 
     wasm.execute(
         &contract_addr,
         &ExecuteMsg::MakeOffer(
-            coin(1_000_000_000_000, "uatom"),
-            coin(1_000_000_000_000, "uosmo"),
+            coin(1_000_000_000, "uatom"),
+            coin(1_000_000_000, "uosmo"),
             None,
         ),
-        &[],
+        &[coin(1_000_000_000, "uatom"), coin(1_000_000_000, "uosmo")],
         &maker,
     )
     .unwrap();
@@ -141,24 +206,43 @@ fn successful_swap() {
                 coin(1_000_000_000_000, "uatom"),
                 coin(1_000_000_000_000, "uosmo"),
             ],
-            2,
+            3,
         )
         .unwrap();
     let maker = &accs[0];
     let taker = &accs[1];
+    let admin = &accs[2];
 
     let taker_addr = taker.address();
 
-    let contract_addr = instantiate_contract(&wasm, maker);
+    let wasm_byte_code = std::fs::read("./artifacts/atomic_swaps_contract-aarch64.wasm").unwrap();
+    let code_id = wasm
+        .store_code(&wasm_byte_code, None, admin)
+        .unwrap()
+        .data
+        .code_id;
+
+    let contract_addr = wasm
+        .instantiate(
+            code_id,
+            &InstantiateMsg {},
+            None,
+            Some("atomic-swaps-contract"),
+            &[],
+            admin,
+        )
+        .unwrap()
+        .data
+        .address;
 
     wasm.execute(
         &contract_addr,
         &ExecuteMsg::MakeOffer(
-            coin(1_000_000_000_000, "uatom"),
-            coin(1_000_000_000_000, "uosmo"),
+            coin(1_000_000_000, "uatom"),
+            coin(1_000_000_000, "uosmo"),
             None,
         ),
-        &[],
+        &[coin(1_000_000_000, "uatom"), coin(1_000_000_000, "uosmo")],
         &maker,
     )
     .unwrap();
@@ -173,7 +257,7 @@ fn successful_swap() {
             offer_id,
             taker: taker_addr,
         },
-        &[coin(1_000_000_000_000, "uosmo")],
+        &[coin(1_000_000_000, "uosmo")],
         &(taker),
     )
     .unwrap();

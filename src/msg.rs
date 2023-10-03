@@ -13,7 +13,6 @@ pub enum ExecuteMsg {
 
 #[cw_serde]
 pub struct Offer {
-    pub offer_id: u64,
     pub maker: String,
     pub taker: Option<String>,
     pub maker_coin: Coin,

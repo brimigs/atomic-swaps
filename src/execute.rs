@@ -1,3 +1,5 @@
+use crate::error::ContractError;
+use crate::error::ContractError::{AlreadyFulfilled, InaccurateFunds, Unauthorized};
 use crate::msg::Offer;
 use crate::state::{OFFERS, OFFER_ID_COUNTER};
 use cosmwasm_std::{
@@ -6,8 +8,6 @@ use cosmwasm_std::{
 use osmosis_std::shim::{Any, Timestamp};
 use osmosis_std::types::cosmos::authz::v1beta1::GrantAuthorization;
 use osmosis_std::types::cosmwasm::wasm::v1::{ContractExecutionAuthorization, ContractGrant};
-use crate::error::ContractError;
-use crate::error::ContractError::{AlreadyFulfilled, InaccurateFunds, Unauthorized};
 
 fn grant_authorization(
     env: Env,
@@ -53,25 +53,30 @@ pub fn make_offer(
     maker_coin: Coin,
     taker_coin: Coin,
     future_time: Option<Timestamp>,
-) ->  Result<Response, ContractError> {
+) -> Result<Response, ContractError> {
     grant_authorization(env, info.clone(), &maker_coin, future_time)?;
 
     if !info.funds.iter().any(|coin| *coin == maker_coin) {
-        return Err(InaccurateFunds {
-            reason:  format!("Maker did not send accurate funds for maker coin, funds needed: {}.", maker_coin),
-        });
+        return Err(InaccurateFunds {});
     }
 
-    // Increment the offer_id counter and use its value as the new offer_id
-    let offer_id =
-        OFFER_ID_COUNTER.update(deps.storage, |counter: u64| Ok::<_, StdError>(counter + 1))?;
+    // Initialize or load the offer_id counter
+    let offer_id: u64 = match OFFER_ID_COUNTER.may_load(deps.storage)? {
+        Some(counter) => counter + 1,
+        None => {
+            // If the counter doesn't exist in storage, set its initial value to 1
+            OFFER_ID_COUNTER.save(deps.storage, &1)?;
+            1
+        }
+    };
+
+    OFFER_ID_COUNTER.save(deps.storage, &offer_id)?;
 
     // Store the offer
     OFFERS.save(
         deps.storage,
-        &info.sender.to_string(),
+        &offer_id.to_string(),
         &Offer {
-            offer_id,
             maker: info.sender.to_string(),
             taker: None,
             maker_coin: maker_coin.clone(),
@@ -88,7 +93,7 @@ pub fn fulfill_offer(
     info: MessageInfo,
     offer_id: String,
     taker: String,
-) -> Result<Response, ContractError>{
+) -> Result<Response, ContractError> {
     // Load offer
     let offer = OFFERS.load(deps.storage, &offer_id)?;
 
@@ -101,10 +106,9 @@ pub fn fulfill_offer(
     }
 
     // Validate takers funds
-    if !info.funds.iter().any(|coin| *coin == offer.taker_coin) {
-        return Err(InaccurateFunds {
-            reason:  format!("Taker did not send accurate funds for maker coin, funds needed: {}.", offer.taker_coin),
-        });
+    let has_taker_coin = info.funds.iter().any(|coin| *coin == offer.taker_coin);
+    if !has_taker_coin {
+        return Err(InaccurateFunds {});
     }
 
     // Transfer coins
