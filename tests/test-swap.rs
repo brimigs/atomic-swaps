@@ -1,6 +1,6 @@
-use crate::helpers::assert_err;
-use atomic_swaps_contract::error::ContractError::InaccurateFunds;
-use atomic_swaps_contract::msg::{ExecuteMsg, InstantiateMsg};
+use crate::helpers::{assert_err, instantiate_contract};
+use atomic_swaps_contract::error::ContractError::{InaccurateFunds, Unauthorized};
+use atomic_swaps_contract::msg::ExecuteMsg;
 use cosmwasm_std::coin;
 use osmosis_test_tube::{Account, Module, OsmosisTestApp, Wasm};
 
@@ -23,26 +23,7 @@ fn no_funds_in_maker_account() {
     let maker = &accs[0];
     let admin = &accs[1];
 
-    let wasm_byte_code = std::fs::read("./artifacts/atomic_swaps_contract-aarch64.wasm").unwrap();
-    let code_id = wasm
-        .store_code(&wasm_byte_code, None, admin)
-        .unwrap()
-        .data
-        .code_id;
-
-    let contract_addr = wasm
-        .instantiate(
-            code_id,
-            &InstantiateMsg {},
-            None,
-            Some("atomic-swaps-contract"),
-            &[],
-            admin,
-        )
-        .unwrap()
-        .data
-        .address;
-
+    let contract_addr = instantiate_contract(&wasm, admin);
     let res_err = wasm
         .execute(
             &contract_addr,
@@ -75,25 +56,7 @@ fn not_enough_funds_by_taker() {
 
     let taker_addr = taker.address();
 
-    let wasm_byte_code = std::fs::read("./artifacts/atomic_swaps_contract-aarch64.wasm").unwrap();
-    let code_id = wasm
-        .store_code(&wasm_byte_code, None, admin)
-        .unwrap()
-        .data
-        .code_id;
-
-    let contract_addr = wasm
-        .instantiate(
-            code_id,
-            &InstantiateMsg {},
-            None,
-            Some("atomic-swaps-contract"),
-            &[],
-            admin,
-        )
-        .unwrap()
-        .data
-        .address;
+    let contract_addr = instantiate_contract(&wasm, admin);
 
     wasm.execute(
         &contract_addr,
@@ -146,25 +109,7 @@ fn invalid_offer_id() {
 
     let taker_addr = taker.address();
 
-    let wasm_byte_code = std::fs::read("./artifacts/atomic_swaps_contract-aarch64.wasm").unwrap();
-    let code_id = wasm
-        .store_code(&wasm_byte_code, None, admin)
-        .unwrap()
-        .data
-        .code_id;
-
-    let contract_addr = wasm
-        .instantiate(
-            code_id,
-            &InstantiateMsg {},
-            None,
-            Some("atomic-swaps-contract"),
-            &[],
-            admin,
-        )
-        .unwrap()
-        .data
-        .address;
+    let contract_addr = instantiate_contract(&wasm, admin);
 
     wasm.execute(
         &contract_addr,
@@ -196,6 +141,60 @@ fn invalid_offer_id() {
 }
 
 #[test]
+fn unauthorized_taker() {
+    let app = OsmosisTestApp::new();
+    let wasm = Wasm::new(&app);
+
+    let accs = app
+        .init_accounts(
+            &[
+                coin(1_000_000_000_000, "uatom"),
+                coin(1_000_000_000_000, "uosmo"),
+            ],
+            4,
+        )
+        .unwrap();
+    let maker = &accs[0];
+    let taker1 = &accs[1];
+    let taker2 = &accs[2];
+    let admin = &accs[3];
+
+    let taker1_addr = taker1.address();
+
+    let contract_addr = instantiate_contract(&wasm, admin);
+
+    wasm.execute(
+        &contract_addr,
+        &ExecuteMsg::MakeOffer(
+            coin(1_000_000_000, "uatom"),
+            coin(1_000_000_000, "uosmo"),
+            None,
+        ),
+        &[coin(1_000_000_000, "uatom"), coin(1_000_000_000, "uosmo")],
+        &maker,
+    )
+    .unwrap();
+
+    // Since this is the only offer in storage, the offer ID will be one. To optimize this in the future, add in additional queries to check for specific maker offers.
+    let number: i32 = 1;
+    let offer_id: String = number.to_string();
+
+    // Taker is executed on behalf of another user and fails
+    let res_err = wasm
+        .execute(
+            &contract_addr,
+            &ExecuteMsg::FulfillOffer {
+                offer_id: offer_id.clone(),
+                taker: taker1_addr,
+            },
+            &[coin(1_000_000_000, "uosmo")],
+            &(taker2),
+        )
+        .unwrap_err();
+
+    assert_err(res_err, Unauthorized {});
+}
+#[test]
 fn successful_swap() {
     let app = OsmosisTestApp::new();
     let wasm = Wasm::new(&app);
@@ -215,26 +214,7 @@ fn successful_swap() {
 
     let taker_addr = taker.address();
 
-    let wasm_byte_code = std::fs::read("./artifacts/atomic_swaps_contract-aarch64.wasm").unwrap();
-    let code_id = wasm
-        .store_code(&wasm_byte_code, None, admin)
-        .unwrap()
-        .data
-        .code_id;
-
-    let contract_addr = wasm
-        .instantiate(
-            code_id,
-            &InstantiateMsg {},
-            None,
-            Some("atomic-swaps-contract"),
-            &[],
-            admin,
-        )
-        .unwrap()
-        .data
-        .address;
-
+    let contract_addr = instantiate_contract(&wasm, admin);
     wasm.execute(
         &contract_addr,
         &ExecuteMsg::MakeOffer(

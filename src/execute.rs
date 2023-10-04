@@ -3,7 +3,7 @@ use crate::error::ContractError::{AlreadyFulfilled, InaccurateFunds, Unauthorize
 use crate::msg::Offer;
 use crate::state::{OFFERS, OFFER_ID_COUNTER};
 use cosmwasm_std::{
-    to_binary, BankMsg, Coin, CosmosMsg, DepsMut, Env, MessageInfo, Response, StdError, StdResult,
+    to_binary, BankMsg, Coin, CosmosMsg, DepsMut, Env, MessageInfo, Response, StdResult,
 };
 use osmosis_std::shim::{Any, Timestamp};
 use osmosis_std::types::cosmos::authz::v1beta1::GrantAuthorization;

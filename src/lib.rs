@@ -1,6 +1,6 @@
-mod contract;
+pub mod contract;
 pub mod error;
-mod execute;
+pub mod execute;
 pub mod msg;
-mod query;
-mod state;
+pub mod query;
+pub mod state;
