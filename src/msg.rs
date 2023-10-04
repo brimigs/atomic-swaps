@@ -27,4 +27,8 @@ pub enum QueryMsg {
         start_after: Option<String>,
         limit: Option<u32>,
     },
+    #[returns(Offer)]
+    FulfilledOffers {
+        offer_id: u64,
+    }
 }

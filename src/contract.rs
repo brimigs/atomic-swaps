@@ -1,7 +1,7 @@
 use crate::error::ContractError;
 use crate::execute::{fulfill_offer, make_offer};
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
-use crate::query::query_all_offers;
+use crate::query::{query_all_offers, query_fulfilled_offers};
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult,
 };
@@ -38,6 +38,9 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> Result<Binary, StdError> {
     let res = match msg {
         QueryMsg::AllOffers { start_after, limit } => {
             to_binary(&query_all_offers(deps, start_after, limit)?)
+        }
+        QueryMsg::FulfilledOffers { offer_id } => {
+            to_binary(&query_fulfilled_offers(deps, offer_id)?)
         }
     };
     res.map_err(Into::into)

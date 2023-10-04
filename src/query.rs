@@ -1,10 +1,11 @@
 use crate::msg::Offer;
-use crate::state::OFFERS;
-use cosmwasm_std::{Deps, Order, StdResult};
+use crate::state::{FULFILLED_OFFERS, OFFERS};
+use cosmwasm_std::{Deps, Order, StdError, StdResult};
 use cw_storage_plus::Bound;
 
 pub const DEFAULT_LIMIT: u32 = 10;
 
+// Query all current offers without a taker
 pub fn query_all_offers(
     deps: Deps,
     start_after: Option<String>,
@@ -19,4 +20,11 @@ pub fn query_all_offers(
         .take(limit)
         .map(|res| Ok(res?.1))
         .collect()
+}
+
+// Query specific offers that have already been fulfilled
+pub fn query_fulfilled_offers(deps: Deps, offer_id: u64) -> Result<Option<Offer>, StdError> {
+    let offer_id_str = offer_id.to_string();
+    let offer = FULFILLED_OFFERS.may_load(deps.storage, &offer_id_str)?;
+    Ok(offer)
 }

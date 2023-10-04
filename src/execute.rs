@@ -1,7 +1,7 @@
 use crate::error::ContractError;
 use crate::error::ContractError::{AlreadyFulfilled, InaccurateFunds, Unauthorized};
 use crate::msg::Offer;
-use crate::state::{OFFERS, OFFER_ID_COUNTER};
+use crate::state::{OFFERS, OFFER_ID_COUNTER, FULFILLED_OFFERS};
 use cosmwasm_std::{
     to_binary, BankMsg, Coin, CosmosMsg, DepsMut, Env, MessageInfo, Response, StdResult,
 };
@@ -106,7 +106,7 @@ pub fn fulfill_offer(
     }
 
     // Validate takers funds
-    let has_taker_coin = info.funds.iter().any(|coin| *coin == offer.taker_coin);
+    let has_taker_coin = info.funds.iter().any(|coin| *coin == offer.taker_coin.clone());
     if !has_taker_coin {
         return Err(InaccurateFunds {});
     }
@@ -115,15 +115,27 @@ pub fn fulfill_offer(
     let messages: Vec<CosmosMsg> = vec![
         BankMsg::Send {
             to_address: offer.maker.to_string(),
-            amount: vec![offer.taker_coin],
+            amount: vec![offer.taker_coin.clone()],
         }
         .into(),
         BankMsg::Send {
             to_address: taker,
-            amount: vec![offer.maker_coin],
+            amount: vec![offer.maker_coin.clone()],
         }
         .into(),
     ];
+
+    // Mark offer as fulfilled
+    FULFILLED_OFFERS.save(
+        deps.storage,
+        &offer_id.to_string(),
+        &Offer {
+            maker: offer.maker,
+            taker: Some(info.sender.to_string()),
+            maker_coin: offer.maker_coin.clone(),
+            taker_coin: offer.taker_coin.clone(),
+        },
+    )?;
 
     // Delete offer
     OFFERS.remove(deps.storage, &offer_id);

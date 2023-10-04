@@ -1,6 +1,6 @@
 use crate::helpers::{assert_err, instantiate_contract};
 use atomic_swaps_contract::error::ContractError::{InaccurateFunds, Unauthorized};
-use atomic_swaps_contract::msg::ExecuteMsg;
+use atomic_swaps_contract::msg::{ExecuteMsg, Offer, QueryMsg};
 use cosmwasm_std::coin;
 use osmosis_test_tube::{Account, Module, OsmosisTestApp, Wasm};
 
@@ -228,7 +228,7 @@ fn successful_swap() {
     .unwrap();
 
     // Since this is the only offer in storage, the offer ID will be one. To optimize this in the future, add in additional queries to check for specific maker offers.
-    let number: i32 = 1;
+    let number: u64 = 1;
     let offer_id: String = number.to_string();
 
     wasm.execute(
@@ -241,4 +241,16 @@ fn successful_swap() {
         &(taker),
     )
     .unwrap();
+
+    // Query the fulfilled offer
+    let response: Offer = wasm.query(
+        &contract_addr,
+        &QueryMsg::FulfilledOffers { offer_id: number }
+    ).unwrap();
+
+    // Validate the response
+    assert_eq!(response.maker, maker.address().to_string());
+    assert_eq!(response.taker, Some(taker.address().to_string()));
+    assert_eq!(response.maker_coin, coin(1_000_000_000, "uatom"));
+    assert_eq!(response.taker_coin, coin(1_000_000_000, "uosmo"));
 }
