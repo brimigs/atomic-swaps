@@ -7,10 +7,17 @@ edition = "2021"
 [lib]
 crate-type = ["cdylib", "rlib"]
 
+[features]
+# for quicker tests, cargo test --lib
+# for more explicit tests, cargo test --features=backtraces
+backtraces = ["cosmwasm-std/backtraces"]
+library    = []
+
 [dependencies]
 cosmwasm-std       = "1.4.0"
 cosmwasm-schema    = "1.4.0"
 cw-storage-plus    = "1.1.0"
+cw-utils           = "1.0.2"
 osmosis-std        = "0.19.2"
 cosmwasm-storage   = "1.4.0"
 thiserror          = "1.0.49"

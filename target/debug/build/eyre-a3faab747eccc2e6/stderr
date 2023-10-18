@@ -10,6 +10,12 @@ error[E0407]: method `backtrace` is not a member of trait `Error`
 25 | |         }
    | |_________^ not a member of trait `Error`
 
+error[E0554]: `#![feature]` may not be used on the stable release channel
+ --> /Users/brimigs/atomic-swaps/target/debug/build/eyre-a3faab747eccc2e6/out/probe.rs:2:16
+  |
+2 |     #![feature(backtrace)]
+  |                ^^^^^^^^^
+
 warning: the feature `backtrace` has been stable since 1.65.0 and no longer requires an attribute to enable
  --> /Users/brimigs/atomic-swaps/target/debug/build/eyre-a3faab747eccc2e6/out/probe.rs:2:16
   |
@@ -18,6 +24,7 @@ warning: the feature `backtrace` has been stable since 1.65.0 and no longer requ
   |
   = note: `#[warn(stable_features)]` on by default
 
-error: aborting due to previous error; 1 warning emitted
+error: aborting due to 2 previous errors; 1 warning emitted
 
-For more information about this error, try `rustc --explain E0407`.
+Some errors have detailed explanations: E0407, E0554.
+For more information about an error, try `rustc --explain E0407`.

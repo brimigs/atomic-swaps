@@ -6,7 +6,7 @@ use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult,
 };
 
-#[entry_point]
+#[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
     _deps: DepsMut,
     _env: Env,
@@ -16,7 +16,7 @@ pub fn instantiate(
     Ok(Response::default())
 }
 
-#[entry_point]
+#[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(
     deps: DepsMut,
     env: Env,
@@ -24,12 +24,11 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::MakeOffer(maker_coin, taker_coin, future_time) => {
-            make_offer(deps, env, info, maker_coin, taker_coin, future_time)
-        }
-        ExecuteMsg::FulfillOffer { offer_id, taker } => {
-            fulfill_offer(deps, env, info, offer_id, taker)
-        }
+        ExecuteMsg::MakeOffer {
+            maker_coin,
+            taker_coin,
+        } => make_offer(deps, env, info, maker_coin, taker_coin),
+        ExecuteMsg::FulfillOffer { offer_id } => fulfill_offer(deps, env, info, offer_id),
     }
 }
 

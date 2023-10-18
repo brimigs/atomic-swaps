@@ -2,6 +2,8 @@ use crate::helpers::{assert_err, instantiate_contract};
 use atomic_swaps_contract::error::ContractError::{InaccurateFunds, Unauthorized};
 use atomic_swaps_contract::msg::{ExecuteMsg, Offer, QueryMsg};
 use cosmwasm_std::coin;
+use cw_utils::PaymentError;
+use osmosis_std::types::cosmos::base::v1beta1::Coin;
 use osmosis_test_tube::{Account, Module, OsmosisTestApp, Wasm};
 
 pub mod helpers;
@@ -27,7 +29,10 @@ fn no_funds_in_maker_account() {
     let res_err = wasm
         .execute(
             &contract_addr,
-            &ExecuteMsg::MakeOffer(coin(1000000, "umars"), coin(1000000, "uosmo"), None),
+            &ExecuteMsg::MakeOffer {
+                maker_coin: Coin::from(coin(1000000, "umars")),
+                taker_coin: coin(1000000, "uosmo"),
+            },
             &[],
             &maker,
         )
@@ -54,18 +59,15 @@ fn not_enough_funds_by_taker() {
     let taker = &accs[1];
     let admin = &accs[2];
 
-    let taker_addr = taker.address();
-
     let contract_addr = instantiate_contract(&wasm, admin);
 
     wasm.execute(
         &contract_addr,
-        &ExecuteMsg::MakeOffer(
-            coin(1_000_000_000, "uatom"),
-            coin(1_000_000_000, "uosmo"),
-            None,
-        ),
-        &[coin(1_000_000_000, "uatom"), coin(1_000_000_000, "uosmo")],
+        &ExecuteMsg::MakeOffer {
+            maker_coin: Coin::from(coin(1_000_000_000, "uatom")),
+            taker_coin: coin(1_000_000_000, "uosmo"),
+        },
+        &[coin(1_000_000_000, "uatom")],
         &maker,
     )
     .unwrap();
@@ -77,16 +79,47 @@ fn not_enough_funds_by_taker() {
     let res_err = wasm
         .execute(
             &contract_addr,
-            &ExecuteMsg::FulfillOffer {
-                offer_id,
-                taker: taker_addr,
-            },
+            &ExecuteMsg::FulfillOffer { offer_id },
             &[coin(1_000, "uosmo")],
             &taker,
         )
         .unwrap_err();
 
     assert_err(res_err, InaccurateFunds {})
+}
+
+#[test]
+fn additional_funds_are_sent() {
+    let app = OsmosisTestApp::new();
+    let wasm = Wasm::new(&app);
+
+    let accs = app
+        .init_accounts(
+            &[
+                coin(1_000_000_000_000, "uatom"),
+                coin(1_000_000_000_000, "uosmo"),
+            ],
+            2,
+        )
+        .unwrap();
+    let maker = &accs[0];
+    let admin = &accs[1];
+
+    let contract_addr = instantiate_contract(&wasm, admin);
+
+    let err_res = wasm
+        .execute(
+            &contract_addr,
+            &ExecuteMsg::MakeOffer {
+                maker_coin: Coin::from(coin(1_000_000_000, "uatom")),
+                taker_coin: coin(1_000_000_000, "uosmo"),
+            },
+            &[coin(1_000_000_000, "uatom"), coin(1_000_000_000, "uosmo")],
+            &maker,
+        )
+        .unwrap_err();
+
+    assert_err(err_res, InaccurateFunds {})
 }
 
 #[test]
@@ -113,12 +146,11 @@ fn invalid_offer_id() {
 
     wasm.execute(
         &contract_addr,
-        &ExecuteMsg::MakeOffer(
-            coin(1_000_000_000, "uatom"),
-            coin(1_000_000_000, "uosmo"),
-            None,
-        ),
-        &[coin(1_000_000_000, "uatom"), coin(1_000_000_000, "uosmo")],
+        &ExecuteMsg::MakeOffer {
+            maker_coin: Coin::from(coin(1_000_000_000, "uatom")),
+            taker_coin: coin(1_000_000_000, "uosmo"),
+        },
+        &[coin(1_000_000_000, "uatom")],
         &maker,
     )
     .unwrap();
@@ -130,10 +162,7 @@ fn invalid_offer_id() {
     // Generic error: Querier contract error: codespace: undefined, code: 1: execute wasm contract failed
     wasm.execute(
         &contract_addr,
-        &ExecuteMsg::FulfillOffer {
-            offer_id,
-            taker: taker_addr,
-        },
+        &ExecuteMsg::FulfillOffer { offer_id },
         &[coin(1_000_000_000_000, "uosmo")],
         &(taker),
     )
@@ -165,12 +194,11 @@ fn unauthorized_taker() {
 
     wasm.execute(
         &contract_addr,
-        &ExecuteMsg::MakeOffer(
-            coin(1_000_000_000, "uatom"),
-            coin(1_000_000_000, "uosmo"),
-            None,
-        ),
-        &[coin(1_000_000_000, "uatom"), coin(1_000_000_000, "uosmo")],
+        &ExecuteMsg::MakeOffer {
+            maker_coin: Coin::from(coin(1_000_000_000, "uatom")),
+            taker_coin: coin(1_000_000_000, "uosmo"),
+        },
+        &[coin(1_000_000_000, "uatom")],
         &maker,
     )
     .unwrap();
@@ -185,14 +213,13 @@ fn unauthorized_taker() {
             &contract_addr,
             &ExecuteMsg::FulfillOffer {
                 offer_id: offer_id.clone(),
-                taker: taker1_addr,
             },
             &[coin(1_000_000_000, "uosmo")],
             &(taker2),
         )
         .unwrap_err();
 
-    assert_err(res_err, Unauthorized {});
+    assert_err(res_err, "Unauthorized access");
 }
 #[test]
 fn successful_swap() {
@@ -217,12 +244,11 @@ fn successful_swap() {
     let contract_addr = instantiate_contract(&wasm, admin);
     wasm.execute(
         &contract_addr,
-        &ExecuteMsg::MakeOffer(
-            coin(1_000_000_000, "uatom"),
-            coin(1_000_000_000, "uosmo"),
-            None,
-        ),
-        &[coin(1_000_000_000, "uatom"), coin(1_000_000_000, "uosmo")],
+        &ExecuteMsg::MakeOffer {
+            maker_coin: Coin::from(coin(1_000_000_000, "uatom")),
+            taker_coin: coin(1_000_000_000, "uosmo"),
+        },
+        &[coin(1_000_000_000, "uatom")],
         &maker,
     )
     .unwrap();
@@ -233,24 +259,28 @@ fn successful_swap() {
 
     wasm.execute(
         &contract_addr,
-        &ExecuteMsg::FulfillOffer {
-            offer_id,
-            taker: taker_addr,
-        },
+        &ExecuteMsg::FulfillOffer { offer_id },
         &[coin(1_000_000_000, "uosmo")],
         &(taker),
     )
     .unwrap();
 
     // Query the fulfilled offer
-    let response: Offer = wasm.query(
-        &contract_addr,
-        &QueryMsg::FulfilledOffers { offer_id: number }
-    ).unwrap();
+    let response: Offer = wasm
+        .query(
+            &contract_addr,
+            &QueryMsg::FulfilledOffers { offer_id: number },
+        )
+        .unwrap();
+
+    // FIXME: Add in query balance of wallet to verify the coins were transferred
 
     // Validate the response
     assert_eq!(response.maker, maker.address().to_string());
     assert_eq!(response.taker, Some(taker.address().to_string()));
-    assert_eq!(response.maker_coin, coin(1_000_000_000, "uatom"));
+    assert_eq!(
+        response.maker_coin,
+        Coin::from(coin(1_000_000_000, "uatom"))
+    );
     assert_eq!(response.taker_coin, coin(1_000_000_000, "uosmo"));
 }

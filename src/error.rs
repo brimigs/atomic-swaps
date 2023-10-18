@@ -9,8 +9,8 @@ pub enum ContractError {
     #[error("Incorrect funds sent")]
     InaccurateFunds {},
 
-    #[error("AlreadyFulfilled")]
-    AlreadyFulfilled {},
+    #[error("No Taker Provided")]
+    NoTaker {},
 
     #[error("Unauthorized")]
     Unauthorized {},
