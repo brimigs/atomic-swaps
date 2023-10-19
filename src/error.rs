@@ -9,9 +9,18 @@ pub enum ContractError {
     #[error("Incorrect funds sent")]
     InaccurateFunds {},
 
-    #[error("No Taker Provided")]
-    NoTaker {},
+    #[error("No offer found from provided offer id")]
+    NoOfferFound {},
+
+    #[error("Fulfillment messages cannot be invoked externally")]
+    ExternalInvocation {},
+
+    #[error("Invalid taker")]
+    InvalidTaker {},
 
     #[error("Unauthorized")]
     Unauthorized {},
+
+    #[error("Reply id: {0} not valid")]
+    ReplyIdError(u64),
 }

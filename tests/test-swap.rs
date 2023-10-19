@@ -2,14 +2,19 @@ use crate::helpers::{assert_err, instantiate_contract};
 use atomic_swaps_contract::error::ContractError::{InaccurateFunds, Unauthorized};
 use atomic_swaps_contract::msg::{ExecuteMsg, Offer, QueryMsg};
 use cosmwasm_std::coin;
-use cw_utils::PaymentError;
 use osmosis_std::types::cosmos::base::v1beta1::Coin;
 use osmosis_test_tube::{Account, Module, OsmosisTestApp, Wasm};
+use osmosis_test_tube::cosmrs::proto::cosmos::authz::v1beta1::{Grant, MsgGrant};
+use osmosis_test_tube::cosmrs::tx::MessageExt;
+use cosmos_sdk_proto::cosmos::base::v1beta1::Coin as CosmosCoin;
+use osmosis_std::types::cosmos::bank::v1beta1::SendAuthorization;
+use osmosis_test_tube::cosmrs::Any;
+use prost::Message;
 
 pub mod helpers;
 
 #[test]
-fn no_funds_in_maker_account() {
+fn error_if_maker_attempts_to_send_funds() {
     let app = OsmosisTestApp::new();
     let wasm = Wasm::new(&app);
 
@@ -33,7 +38,7 @@ fn no_funds_in_maker_account() {
                 maker_coin: Coin::from(coin(1000000, "umars")),
                 taker_coin: coin(1000000, "uosmo"),
             },
-            &[],
+            &[coin(1000000, "uosmo")],
             &maker,
         )
         .unwrap_err();
@@ -49,8 +54,8 @@ fn not_enough_funds_by_taker() {
     let accs = app
         .init_accounts(
             &[
-                coin(1_000_000_000_000, "uatom"),
-                coin(1_000_000_000_000, "uosmo"),
+                coin(1_000_000_000_000_000, "uatom"),
+                coin(1_000_000_000_000_000, "uosmo"),
             ],
             3,
         )
@@ -61,13 +66,27 @@ fn not_enough_funds_by_taker() {
 
     let contract_addr = instantiate_contract(&wasm, admin);
 
+    // Grant permissions to the contract
+    let grant_msg = MsgGrant {
+        granter: maker.address().to_string(),
+        grantee: contract_addr.to_string(),
+        grant: Some(Grant {
+            authorization: Some(Any::from(SendAuthorization {
+                spend_limit: vec![Coin::from(coin(1_000_000_000, "uatom"))],
+            }.to_any())),
+            expiration: None,
+        }),
+    };
+
+    app.simulate_tx(vec![grant_msg], &maker).unwrap();
+
     wasm.execute(
         &contract_addr,
         &ExecuteMsg::MakeOffer {
             maker_coin: Coin::from(coin(1_000_000_000, "uatom")),
             taker_coin: coin(1_000_000_000, "uosmo"),
         },
-        &[coin(1_000_000_000, "uatom")],
+        &[],
         &maker,
     )
     .unwrap();
@@ -238,8 +257,6 @@ fn successful_swap() {
     let maker = &accs[0];
     let taker = &accs[1];
     let admin = &accs[2];
-
-    let taker_addr = taker.address();
 
     let contract_addr = instantiate_contract(&wasm, admin);
     wasm.execute(

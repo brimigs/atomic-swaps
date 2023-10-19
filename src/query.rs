@@ -5,7 +5,7 @@ use cw_storage_plus::Bound;
 
 pub const DEFAULT_LIMIT: u32 = 10;
 
-// Query all current offers without a taker
+// Query all current offers
 pub fn query_all_offers(
     deps: Deps,
     start_after: Option<String>,

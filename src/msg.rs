@@ -8,6 +8,7 @@ pub struct InstantiateMsg {}
 #[cw_serde]
 pub enum ExecuteMsg {
     MakeOffer { maker_coin: Coin2, taker_coin: Coin },
+    OfferTaker { offer_id: String },
     FulfillOffer { offer_id: String },
 }
 
