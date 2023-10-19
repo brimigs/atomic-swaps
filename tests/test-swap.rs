@@ -542,7 +542,19 @@ fn successful_swap() {
     let taker = &accs[1];
     let admin = &accs[2];
 
+    let maker_osmo_balance = query_balance(&bank, &maker.address(), "uosmo");
+    let taker_osmo_balance = query_balance(&bank, &taker.address(), "uosmo");
+
+    assert_eq!(maker_osmo_balance, 1_000_000_000_000);
+    assert_eq!(taker_osmo_balance, 1_000_000_000_000);
+
     let contract_addr = instantiate_contract(&wasm, admin);
+
+    let maker_osmo_balance = query_balance(&bank, &maker.address(), "uosmo");
+    let taker_osmo_balance = query_balance(&bank, &taker.address(), "uosmo");
+
+    assert_eq!(maker_osmo_balance, 1_000_000_000_000);
+    assert_eq!(taker_osmo_balance, 1_000_000_000_000);
 
     let grant = ContractGrant {
         contract: contract_addr.clone(),
@@ -603,6 +615,12 @@ fn successful_swap() {
     app.execute_cosmos_msgs::<MsgGrantResponse>(&[msg, msg2], maker)
         .unwrap();
 
+    let maker_osmo_balance = query_balance(&bank, &maker.address(), "uosmo");
+    let taker_osmo_balance = query_balance(&bank, &taker.address(), "uosmo");
+
+    assert_eq!(maker_osmo_balance, 999729685000); // 1000000000000 - 999729685000 = 27031500 tx fee
+    assert_eq!(taker_osmo_balance, 1000000000000);
+
     wasm.execute(
         &contract_addr,
         &ExecuteMsg::MakeOffer {
@@ -613,6 +631,12 @@ fn successful_swap() {
         &maker,
     )
     .unwrap();
+
+    let maker_osmo_balance = query_balance(&bank, &maker.address(), "uosmo");
+    let taker_osmo_balance = query_balance(&bank, &taker.address(), "uosmo");
+
+    assert_eq!(maker_osmo_balance, 999314570000); // 999729685000 - 999314570000 = 415115000 tx fee
+    assert_eq!(taker_osmo_balance, 1000000000000);
 
     // Assert offer is properly saved and test query for taker to be able see current offers
     let open_offers: Vec<Offer> = wasm
@@ -662,12 +686,12 @@ fn successful_swap() {
     let taker_osmo_balance = query_balance(&bank, &taker.address(), "uosmo");
 
     // Validate atom swap
-    assert_eq!(maker_atom_balance, 999000000000);
-    assert_eq!(taker_atom_balance, 1001000000000);
+    assert_eq!(maker_atom_balance, 999000000000); // decremented 1000000000
+    assert_eq!(taker_atom_balance, 1001000000000); // incremented 1000000000
 
     // Validate osmo swap
-    assert_eq!(maker_osmo_balance, 1000314570000); // 1000314570000 - 1000000000 = 999314570000
-    assert_eq!(taker_osmo_balance, 998127070000); // 998127070000 + 1000000000 = 999127070000
+    assert_eq!(maker_osmo_balance, 1000314570000); // 1000314570000 - 1000000000 = 999314570000 // 999314570000 - 999314570000 = 0 tx fee
+    assert_eq!(taker_osmo_balance, 998127070000); // 998127070000 + 1000000000 = 999127070000 // 1000000000000 - 999127070000 = 872930000 tx fee
 
     // Validate the Fulfilled Offers storage was accurately updated
     assert_eq!(response.maker, maker.address().to_string());
