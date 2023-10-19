@@ -13,14 +13,8 @@ pub enum ContractError {
     NoOfferFound {},
 
     #[error("Fulfillment messages cannot be invoked externally")]
-    ExternalInvocation {},
+    Unauthorized {},
 
     #[error("Invalid taker")]
     InvalidTaker {},
-
-    #[error("Unauthorized")]
-    Unauthorized {},
-
-    #[error("Reply id: {0} not valid")]
-    ReplyIdError(u64),
 }

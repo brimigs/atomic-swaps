@@ -1,7 +1,9 @@
 use std::fmt::Display;
+use std::str::FromStr;
 
 use atomic_swaps_contract::msg::InstantiateMsg;
-use osmosis_test_tube::{OsmosisTestApp, RunnerError, SigningAccount, Wasm};
+use osmosis_std::types::cosmos::bank::v1beta1::QueryBalanceRequest;
+use osmosis_test_tube::{Bank, OsmosisTestApp, RunnerError, SigningAccount, Wasm};
 
 pub fn wasm_file() -> Vec<u8> {
     let wasm_file_path = format!("./artifacts/atomic_swaps_contract");
@@ -38,6 +40,17 @@ pub fn instantiate_contract(wasm: &Wasm<OsmosisTestApp>, owner: &SigningAccount)
     .unwrap()
     .data
     .address
+}
+
+pub fn query_balance(bank: &Bank<OsmosisTestApp>, addr: &str, denom: &str) -> u128 {
+    bank.query_balance(&QueryBalanceRequest {
+        address: addr.to_string(),
+        denom: denom.to_string(),
+    })
+    .unwrap()
+    .balance
+    .map(|c| u128::from_str(&c.amount).unwrap())
+    .unwrap_or(0)
 }
 
 pub fn assert_err(actual: RunnerError, expected: impl Display) {

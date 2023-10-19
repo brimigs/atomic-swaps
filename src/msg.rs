@@ -1,13 +1,12 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::Coin;
-use osmosis_std::types::cosmos::base::v1beta1::Coin as Coin2;
+use osmosis_std::types::cosmos::base::v1beta1::Coin;
 
 #[cw_serde]
 pub struct InstantiateMsg {}
 
 #[cw_serde]
 pub enum ExecuteMsg {
-    MakeOffer { maker_coin: Coin2, taker_coin: Coin },
+    MakeOffer { maker_coin: Coin, taker_coin: Coin },
     OfferTaker { offer_id: String },
     FulfillOffer { offer_id: String },
 }
@@ -16,7 +15,7 @@ pub enum ExecuteMsg {
 pub struct Offer {
     pub maker: String,
     pub taker: Option<String>,
-    pub maker_coin: Coin2,
+    pub maker_coin: Coin,
     pub taker_coin: Coin,
 }
 

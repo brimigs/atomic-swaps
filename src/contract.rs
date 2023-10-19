@@ -1,11 +1,9 @@
 use crate::error::ContractError;
-use crate::error::ContractError::ReplyIdError;
-use crate::execute::{fulfill_offer, handle_taker_match_offer_request, make_offer, provide_taker};
+use crate::execute::{fulfill_offer, make_offer, provide_taker};
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use crate::query::{query_all_offers, query_fulfilled_offers};
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdError,
-    StdResult,
+    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult,
 };
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -32,14 +30,6 @@ pub fn execute(
         } => make_offer(deps, env, info, maker_coin, taker_coin),
         ExecuteMsg::OfferTaker { offer_id } => provide_taker(deps, env, info, offer_id),
         ExecuteMsg::FulfillOffer { offer_id } => fulfill_offer(deps, env, info, offer_id),
-    }
-}
-
-#[cfg_attr(not(feature = "library"), entry_point)]
-pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractError> {
-    match msg.id {
-        TAKER_MATCH_REPLY_ID => handle_taker_match_offer_request(deps, _env, msg),
-        _ => Err(ReplyIdError(msg.id)),
     }
 }
 
